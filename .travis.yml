@@ -1,0 +1,29 @@
+language: python
+
+env:
+  global:
+    - PIP_DOWNLOAD_CACHE=$HOME/.pip-cache
+  matrix:
+    - TOXENV=py27
+
+sudo: false
+
+cache:
+  - $HOME/.pip-cache
+
+install:
+  - pip install tox
+
+before_script:
+  # allow ssh loopback
+
+script:
+  - nosetests
+
+after_failure:
+
+after_success:
+
+branches:
+  only:
+    - master

@@ -29,6 +29,7 @@ class Shell(object):
         return self.shell(cmd, wrap=self.wrap_remote_python_env)
 
     def wrap_remote_python_env(self, cmd):
+        # TODO support zsh profile
         return """ssh %s "source ~/.bash_profile
                   cd %s
                   if [ -f ENV/bin/activate ];

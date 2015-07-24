@@ -38,9 +38,16 @@ class RsyncRun(Steps):
         Compatible.compatible_with_old_API(self)
 
     def run(self):
-        # TODO colorize shell output
+        # http://stackoverflow.com/questions/287871/print-in-terminal-with-colors-using-python
+        def green_line(string):
+            """ colorize shell output """
+            fg_lightgreen = '\033[92m'
+            fg_reset = '\033[0m'
+            bg_black = '\033[40m'
+            print fg_lightgreen + bg_black + string + fg_reset
+
         for idx, step in enumerate(self.ordered_steps_list):
-            print "[Step#%s]:" % (idx + 1), step.replace("_", " ")
+            green_line("\n[Step#%s]: %s\n" % (idx + 1, step.replace("_", " ")))
             getattr(self, step)()
 
     @cached_property
@@ -49,7 +56,7 @@ class RsyncRun(Steps):
 
     @cached_property
     def installer(self):
-        return Installer(self.execute_dir, self.conf["sync_projects"]["projects_lazy_install_by_python"])
+        return Installer(self.shell, self.conf["sync_projects"]["projects_lazy_install_by_python"])
 
     @cached_property
     def old_api_json_filename(self):

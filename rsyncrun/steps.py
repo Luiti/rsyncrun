@@ -79,7 +79,7 @@ class Steps(object):
         """)
 
     def install_package_lazily(self):
-        self.installer.run(self.source_code_sync_result)
+        self.installer.do(self.source_code_sync_result)
 
     def run_some_before_scripts(self):
         scripts = self.conf.get("scripts_before_run", list())

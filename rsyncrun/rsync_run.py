@@ -11,7 +11,8 @@ import pkg_resources
 import datetime
 from cached_property import cached_property
 
-from .conf import Conf
+from .json_conf_template import JsonConfTemplate
+from .compatible import Compatible
 
 # TODO mock remote server
 
@@ -30,14 +31,20 @@ class RsyncRun(object):
     ]
 
     def __init__(self, sys_argv=[]):
+        self.argv = sys_argv
         self.pid = os.getpid()
-        self.directory = self.parser.directory
-        self.user = self.parser.user
+        self.directory = self.args.directory
+        self.user = self.args.user
 
-        # TODO comptible with xdeploy and rsyncrun
-        self.guess_conf_file = os.path.join(self.directory, "xdeploy_" + self.user + ".json")
-        self.conf_file = self.parser.conf or self.guess_conf_file
+        self.guess_conf_file = os.path.join(self.directory, JsonConfTemplate.name_prefix + "_" + self.user + ".json")
+        self.conf_file = self.args.conf or self.guess_conf_file
         self.is_auto_guessed = self.guess_conf_file == self.conf_file
+
+        Compatible.compatible_with_old_API(self)
+
+    @cached_property
+    def old_api_json_filename(self):
+        return self.guess_conf_file.replace(JsonConfTemplate.name_prefix, JsonConfTemplate.name_prefix_old)
 
     @cached_property
     def parser(self):
@@ -47,11 +54,15 @@ class RsyncRun(object):
             help=u"Use this directory to find guessed config json file automately.", required=False, )
         parser.add_argument(
             '--user', default=getpass.getuser(),
-            help=u"Use user name to find guessed config json file automately.", required=False, )
+            help=u"Use username to find guessed config json file automately.", required=False, )
         parser.add_argument(
             '--conf', default=getpass.getuser(),
             help=u"Force to specify a conf file.", required=False, )
         return parser
+
+    @cached_property
+    def args(self):
+        return self.parser.parse_args(self.argv[1:])
 
     @cached_property
     def conf(self):
@@ -121,12 +132,12 @@ class RsyncRun(object):
 
     def setup_conf(self):
         if not os.path.exists(self.runner.conf_file):
-            print """[warn] can't find %s ! Please create one, e.g. %s""" % (self.conf_file, Conf.example)
+            print """[warn] can't find %s ! Please create one, e.g. %s""" % (self.conf_file, JsonConfTemplate.example)
 
     def validate(self):
         assert isinstance(self.conf, dict)
-        assert "sync_projects" in self.conf, "See valid example in conf %s" % Conf.example
-        assert "remote_server" in self.conf, "See valid example in conf %s" % Conf.example
+        assert "sync_projects" in self.conf, "See valid example in conf %s" % JsonConfTemplate.example
+        assert "remote_server" in self.conf, "See valid example in conf %s" % JsonConfTemplate.example
         conf_file_msg = "Auto detected" if self.guess_conf_file is self.conf_file else "Specified"
         print "** %s config file is %s" % (conf_file_msg, self.conf_file)
 

@@ -1,7 +1,10 @@
 # -*-coding:utf-8-*-
 
 
-class Conf(object):
+class JsonConfTemplate(object):
+
+    name_prefix = "rsyncrun"
+    name_prefix_old = "xdeploy"
 
     example = """{
 "sync_projects": {

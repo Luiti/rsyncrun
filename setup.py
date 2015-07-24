@@ -12,7 +12,7 @@ setup(
     author='David Chen',
     author_email=''.join(reversed("moc.liamg@emojvm")),
     description='Rsync your code to server and run.',
-    long_description=open("README.markdown").read(),
+    long_description=open("README.md").read(),
     packages=["rsyncrun"],
     scripts=[
         'bin/rsyncrun',

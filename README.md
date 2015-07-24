@@ -29,7 +29,6 @@ rsyncrun
 
 TODO
 ----------------------------
-1. 判断luiti package 好像是在本地的
-2. compact with canceled, e.g. catch event, keep the log
+1. compact with canceled, e.g. catch event, keep the log
 
 I want a feature X ? ... please [create an issue](https://github.com/17zuoye/rsyncrun/issues), or [fork it](https://github.com/17zuoye/rsyncrun/).

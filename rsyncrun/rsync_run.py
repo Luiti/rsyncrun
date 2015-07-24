@@ -94,7 +94,7 @@ class RsyncRun(object):
     @cached_property
     def rsync_output_file(self):
         today_str = datetime.datetime.now().strftime("%Y%m%d")
-        return "/tmp/xdeploy_rsync_%s_%s" % (today_str, self.pid)
+        return "/tmp/%s_%s_%s" % (JsonConfTemplate.name_prefix, today_str, self.pid)
 
     @cached_property
     def rsync_output_file_remote(self):
@@ -102,7 +102,9 @@ class RsyncRun(object):
 
     def setup_conf(self):
         if not os.path.exists(self.conf_file):
-            print """[warn] can't find %s ! Please create one, e.g. %s""" % (self.conf_file, JsonConfTemplate.example)
+            print """[warn] can't find %s ! Please create one, e.g. %s""" % (
+                self.conf_file, JsonConfTemplate.example)
+            exit(1)
 
     def validate(self):
         assert isinstance(self.conf, dict)
@@ -119,6 +121,7 @@ class RsyncRun(object):
         for sync_opts_type in ["local_to_remote", "remote_to_remote"]:
             sync_opt2 = self.conf["sync_projects"][sync_opts_type]
             for project1 in sync_opt2:
+
                 if sync_opts_type == "remote_to_remote":
                     from_addr, to_addr = sync_opt2[project1]
                 else:
@@ -129,13 +132,20 @@ class RsyncRun(object):
                      from_addr,
                      to_addr,
                      self.rsync_output_file)
+
                 if sync_opts_type == "remote_to_remote":
                     self.shell.remote(source_code_sync_command2)
                 else:
                     self.shell.local(source_code_sync_command2)
 
         # get remote changed content
-        self.shell.local("""scp %s:%s %s; cat %s >> %s; rm -f %s; """ % (self.remote_user_host, self.rsync_output_file, self.rsync_output_file_remote, self.rsync_output_file_remote, self.rsync_output_file, self.rsync_output_file_remote))
+        self.shell.local("""scp %s:%s %s; cat %s >> %s; rm -f %s; """ % (
+            self.remote_user_host,
+            self.rsync_output_file,
+            self.rsync_output_file_remote,
+            self.rsync_output_file_remote,
+            self.rsync_output_file,
+            self.rsync_output_file_remote))
         self.source_code_sync_result = file(self.rsync_output_file).read()
 
         self.shell.local("echo rsync_output_file; cat %s" % self.rsync_output_file)
@@ -197,4 +207,4 @@ class RsyncRun(object):
     def clean(self):
         """ when exit, clean """
         clean_file_under_root_tmp = """find /tmp/ -maxdepth 1 -type f -mmin +30 | grep %s | xargs rm -f ;"""
-        self.shell.remote(clean_file_under_root_tmp % "xdeploy_")
+        self.shell.remote(clean_file_under_root_tmp % JsonConfTemplate.name_prefix)

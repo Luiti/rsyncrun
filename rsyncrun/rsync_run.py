@@ -4,7 +4,6 @@ __all__ = ["RsyncRun"]
 
 import os
 import getpass
-import subprocess
 import argparse
 import json
 import pkg_resources
@@ -13,6 +12,7 @@ from cached_property import cached_property
 
 from .json_conf_template import JsonConfTemplate
 from .compatible import Compatible
+from .shell import Shell
 
 # TODO mock remote server
 
@@ -41,6 +41,10 @@ class RsyncRun(object):
         self.is_auto_guessed = self.guess_conf_file == self.conf_file
 
         Compatible.compatible_with_old_API(self)
+
+    @cached_property
+    def shell(self):
+        return Shell(self.remote_user_host, self.execute_dir)
 
     @cached_property
     def old_api_json_filename(self):
@@ -99,30 +103,6 @@ class RsyncRun(object):
     def rsync_output_file_remote(self):
         return "%s_2" % self.rsync_output_file
 
-    def wrap_remote_python_env(self, cmd):
-        return """ssh %s "source ~/.bash_profile
-                  cd %s
-                  if [ -f ENV/bin/activate ];
-                      then source ENV/bin/activate
-                  fi;
-                  %s"
-                """ % (self.remote_user_host,
-                       self.execute_dir,
-                       cmd,)
-
-    def shell(self, cmd, wrap=None, return_output=False):
-        # TODO replace with subprocess
-        if wrap:
-            cmd = wrap(cmd)
-        print "[command]", cmd
-        if return_output:
-            return subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT)
-        else:
-            return os.system(cmd)
-
-    def rshell(self, cmd):
-        return self.shell(cmd, wrap=self.wrap_remote_python_env)
-
     def install_package_cmd(self, package_name):
         return """
                  cd %s
@@ -162,17 +142,17 @@ class RsyncRun(object):
                 if sync_opts_type == "remote_to_remote":
                     self.rshell(source_code_sync_command2)
                 else:
-                    self.shell(source_code_sync_command2)
+                    self.shell.local(source_code_sync_command2)
 
         # get remote changed content
-        self.shell("""scp %s:%s %s; cat %s >> %s; rm -f %s; """ % (self.remote_user_host, self.rsync_output_file, self.rsync_output_file_remote, self.rsync_output_file_remote, self.rsync_output_file, self.rsync_output_file_remote))
+        self.shell.local("""scp %s:%s %s; cat %s >> %s; rm -f %s; """ % (self.remote_user_host, self.rsync_output_file, self.rsync_output_file_remote, self.rsync_output_file_remote, self.rsync_output_file, self.rsync_output_file_remote))
         self.source_code_sync_result = file(self.rsync_output_file).read()
 
-        self.shell("echo rsync_output_file; cat %s" % self.rsync_output_file)
-        self.shell("rm -f %s" % self.rsync_output_file)
+        self.shell.local("echo rsync_output_file; cat %s" % self.rsync_output_file)
+        self.shell.local("rm -f %s" % self.rsync_output_file)
 
     def prepare_virtualenv(self):
-        self.rshell("""
+        self.shell.remote("""
         if [ ! -f ENV/bin/activate ]; then
             pip install virtualenv
             virtualenv ENV
@@ -193,13 +173,13 @@ class RsyncRun(object):
 
             if need_install1:
                 print "[install packaqe]", pkg1, "is changed ..."
-                self.rshell(install_cmd1["cmd"])
+                self.shell.remote(install_cmd1["cmd"])
             else:
                 print "[install packaqe]", pkg1, "is not changed."
 
     def run_some_before_scripts(self):
         for script1 in self.conf.get("scripts_before_run", list()):
-            self.rshell(script1)
+            self.shell.remote(script1)
 
     def launch_program(self):
         task_opts = self.conf["launch"].get("params_list", list())
@@ -207,9 +187,9 @@ class RsyncRun(object):
             task_opts = [task_opts]
         params_index = self.conf["launch"].get("params_index", 0)
         task_opts = task_opts[params_index]
-        self.rshell(self.conf["launch"]["template"] % tuple(task_opts))
+        self.shell.remote(self.conf["launch"]["template"] % tuple(task_opts))
 
     def clean(self):
         """ when exit, clean """
         clean_file_under_root_tmp = """find /tmp/ -maxdepth 1 -type f -mmin +30 | grep %s | xargs rm -f ;"""
-        self.rshell(clean_file_under_root_tmp % "xdeploy_")
+        self.shell.remote(clean_file_under_root_tmp % "xdeploy_")

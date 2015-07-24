@@ -42,6 +42,12 @@ class RsyncRun(object):
 
         Compatible.compatible_with_old_API(self)
 
+    def run(self):
+        # TODO colorize shell output
+        for idx, step in enumerate(self.ordered_steps_list):
+            print "[Step#%s]:" % (idx + 1), step.replace("_", " ")
+            getattr(self, step)()
+
     @cached_property
     def shell(self):
         return Shell(self.remote_user_host, self.execute_dir)
@@ -70,16 +76,7 @@ class RsyncRun(object):
 
     @cached_property
     def conf(self):
-        result = json.loads(file(self.conf_file).read())
-
-        # assign some variables
-        result["dep_packages_with_install_cmd"] = result.get("dep_packages_with_install_cmd", dict())
-        for pkg1 in result["sync_projects"]["projects_lazy_install_by_python"]:
-            result["dep_packages_with_install_cmd"][pkg1] = {
-                "match": "\n%s/" % pkg1,  # sync files is line by line.
-                "cmd": self.install_package_cmd(pkg1), }
-
-        return result
+        return json.loads(file(self.conf_file).read())
 
     @cached_property
     def rsync_cmd(self):
@@ -103,15 +100,8 @@ class RsyncRun(object):
     def rsync_output_file_remote(self):
         return "%s_2" % self.rsync_output_file
 
-    def install_package_cmd(self, package_name):
-        return """
-                 cd %s
-                 cd %s
-                 python setup.py install
-                """ % (self.execute_dir, package_name,)
-
     def setup_conf(self):
-        if not os.path.exists(self.runner.conf_file):
+        if not os.path.exists(self.conf_file):
             print """[warn] can't find %s ! Please create one, e.g. %s""" % (self.conf_file, JsonConfTemplate.example)
 
     def validate(self):
@@ -140,7 +130,7 @@ class RsyncRun(object):
                      to_addr,
                      self.rsync_output_file)
                 if sync_opts_type == "remote_to_remote":
-                    self.rshell(source_code_sync_command2)
+                    self.shell.remote(source_code_sync_command2)
                 else:
                     self.shell.local(source_code_sync_command2)
 
@@ -159,8 +149,23 @@ class RsyncRun(object):
         fi;
         """)
 
+    @cached_property
+    def dep_packages_with_install_cmd(self):
+        # assign some variables
+        dep_packages_with_install_cmd = self.conf.get("dep_packages_with_install_cmd", dict())
+
+        def install_package_cmd(package_name):
+            return """cd %s; cd %s; python setup.py install
+                """ % (self.execute_dir, package_name,)
+
+        for pkg1 in self.conf["sync_projects"]["projects_lazy_install_by_python"]:
+            dep_packages_with_install_cmd[pkg1] = {
+                "match": "\n%s/" % pkg1,  # sync files is line by line.
+                "cmd": install_package_cmd(pkg1), }
+        return dep_packages_with_install_cmd
+
     def install_package_lazily(self):
-        for pkg1, install_cmd1 in self.conf["dep_packages_with_install_cmd"].iteritems():
+        for pkg1, install_cmd1 in self.dep_packages_with_install_cmd.iteritems():
             # compact with interrupt of sync code, and `rsync` will not detect changed code, and will not install updated packages.
             pkg1 = pkg1.split("/")[-1]  # if has dir
             need_install1 = False

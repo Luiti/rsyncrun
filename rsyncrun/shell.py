@@ -26,7 +26,7 @@ class Shell(object):
             return os.system(cmd)
 
     def remote(self, cmd):
-        return self.shell(cmd, wrap=self.wrap_remote_python_env)
+        return self.local(cmd, wrap=self.wrap_remote_python_env)
 
     def wrap_remote_python_env(self, cmd):
         # TODO support zsh profile

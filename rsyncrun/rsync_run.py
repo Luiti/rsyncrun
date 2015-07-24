@@ -6,13 +6,13 @@ import os
 import getpass
 import argparse
 import json
-import pkg_resources
 import datetime
 from cached_property import cached_property
 
 from .json_conf_template import JsonConfTemplate
 from .compatible import Compatible
 from .shell import Shell
+from .installer import Installer
 
 # TODO mock remote server
 
@@ -53,6 +53,10 @@ class RsyncRun(object):
         return Shell(self.remote_user_host, self.execute_dir)
 
     @cached_property
+    def installer(self):
+        return Installer(self.execute_dir, self.conf["sync_projects"]["projects_lazy_install_by_python"])
+
+    @cached_property
     def old_api_json_filename(self):
         return self.guess_conf_file.replace(JsonConfTemplate.name_prefix, JsonConfTemplate.name_prefix_old)
 
@@ -89,7 +93,7 @@ class RsyncRun(object):
 
     @cached_property
     def execute_dir(self):
-        return self.conf["remote_server"]["execute_dir"]
+        return self.conf["remote_server"]["execute_dir"].rstrip("/")
 
     @cached_property
     def rsync_output_file(self):
@@ -108,8 +112,9 @@ class RsyncRun(object):
 
     def validate(self):
         assert isinstance(self.conf, dict)
-        assert "sync_projects" in self.conf, "See valid example in conf %s" % JsonConfTemplate.example
-        assert "remote_server" in self.conf, "See valid example in conf %s" % JsonConfTemplate.example
+        invalid_example_info = "See valid example in conf %s" % JsonConfTemplate.example
+        assert "sync_projects" in self.conf, invalid_example_info
+        assert "remote_server" in self.conf, invalid_example_info
         conf_file_msg = "Auto detected" if self.guess_conf_file is self.conf_file else "Specified"
         print "** %s config file is %s" % (conf_file_msg, self.conf_file)
 
@@ -159,38 +164,8 @@ class RsyncRun(object):
         fi;
         """)
 
-    @cached_property
-    def dep_packages_with_install_cmd(self):
-        # assign some variables
-        dep_packages_with_install_cmd = self.conf.get("dep_packages_with_install_cmd", dict())
-
-        def install_package_cmd(package_name):
-            return """cd %s; cd %s; python setup.py install
-                """ % (self.execute_dir, package_name,)
-
-        for pkg1 in self.conf["sync_projects"]["projects_lazy_install_by_python"]:
-            dep_packages_with_install_cmd[pkg1] = {
-                "match": "\n%s/" % pkg1,  # sync files is line by line.
-                "cmd": install_package_cmd(pkg1), }
-        return dep_packages_with_install_cmd
-
     def install_package_lazily(self):
-        for pkg1, install_cmd1 in self.dep_packages_with_install_cmd.iteritems():
-            # compact with interrupt of sync code, and `rsync` will not detect changed code, and will not install updated packages.
-            pkg1 = pkg1.split("/")[-1]  # if has dir
-            need_install1 = False
-            try:
-                pkg_resources.require(pkg1)
-            except:
-                need_install1 = True
-            if install_cmd1["match"] in self.source_code_sync_result:
-                need_install1 = True
-
-            if need_install1:
-                print "[install packaqe]", pkg1, "is changed ..."
-                self.shell.remote(install_cmd1["cmd"])
-            else:
-                print "[install packaqe]", pkg1, "is not changed."
+        self.installer.run(self.source_code_sync_result)
 
     def run_some_before_scripts(self):
         for script1 in self.conf.get("scripts_before_run", list()):
@@ -206,5 +181,6 @@ class RsyncRun(object):
 
     def clean(self):
         """ when exit, clean """
-        clean_file_under_root_tmp = """find /tmp/ -maxdepth 1 -type f -mmin +30 | grep %s | xargs rm -f ;"""
+        clean_file_under_root_tmp = """
+            find /tmp/ -maxdepth 1 -type f -mmin +30 | grep %s | xargs rm -f ;"""
         self.shell.remote(clean_file_under_root_tmp % JsonConfTemplate.name_prefix)

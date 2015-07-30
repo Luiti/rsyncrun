@@ -85,7 +85,7 @@ class Steps(object):
         scripts = self.conf.get("scripts_before_run", list())
         scripts = map(lambda s1: s1.strip(), scripts)
         # Ignore comment.
-        scripts = filter(lambda s1: s1.startswith("#"), scripts)
+        scripts = filter(lambda s1: not s1.startswith("#"), scripts)
 
         for script1 in scripts:
             self.shell.remote(script1)

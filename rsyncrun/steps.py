@@ -24,7 +24,7 @@ class Steps(object):
 
     def setup_conf(self):
         if not os.path.exists(self.conf_file):
-            print """[warn] can't find %s ! Please create one, e.g. %s""" % (
+            print """[warn] can't find self.conf_file = "%s" ! Please create one, e.g. %s""" % (
                 self.conf_file, JsonConfTemplate.example)
             exit(1)
 

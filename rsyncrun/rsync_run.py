@@ -31,9 +31,27 @@ class RsyncRun(Steps):
         self.directory = self.args.directory
         self.user = self.args.user
 
+        # e.g. rsyncrun_mvj3.json
         self.guess_conf_file = os.path.join(self.directory, JsonConfTemplate.name_prefix + "_" + self.user + ".json")
-        self.conf_file = self.args.conf or self.guess_conf_file
-        self.is_auto_guessed = self.guess_conf_file == self.conf_file
+        # e.g. xdeploy_mvj3.json
+        self.guess_conf_file_old = os.path.join(self.directory, JsonConfTemplate.name_prefix_old + "_" + self.user + ".json")
+        # e.g. rsyncrun_luiti_webui.json
+        self.specified_conf_file = None
+        if self.args.conf:
+            if self.args.conf.startswith("/"):
+                self.specified_conf_file = self.args.conf
+            else:
+                self.specified_conf_file = os.path.join(self.directory, self.args.conf)
+
+        self.is_auto_guessed = os.path.exists(self.guess_conf_file)
+
+        self.conf_file = NotImplementedError
+        if self.is_auto_guessed:
+            self.conf_file = self.guess_conf_file
+        if (self.conf_file is None) and os.path.exists(self.guess_conf_file_old):
+            self.conf_file = self.guess_conf_file_old
+        if os.path.exists(self.specified_conf_file):
+            self.conf_file = self.specified_conf_file  # force overwrite above
 
         Compatible.compatible_with_old_API(self)
 

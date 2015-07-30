@@ -45,7 +45,7 @@ class RsyncRun(Steps):
 
         self.is_auto_guessed = os.path.exists(self.guess_conf_file)
 
-        self.conf_file = NotImplementedError
+        self.conf_file = None
         if self.is_auto_guessed:
             self.conf_file = self.guess_conf_file
         if (self.conf_file is None) and os.path.exists(self.guess_conf_file_old):
@@ -53,6 +53,7 @@ class RsyncRun(Steps):
         if os.path.exists(self.specified_conf_file):
             self.conf_file = self.specified_conf_file  # force overwrite above
 
+        assert isinstance(self.conf_file, basestring), self.conf_file
         Compatible.compatible_with_old_API(self)
 
     def run(self):

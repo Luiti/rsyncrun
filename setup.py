@@ -6,7 +6,7 @@ from setuptools import setup
 
 setup(
     name='rsyncrun',
-    version='1.0.1',
+    version='1.1.1',
     url='http://github.com/17zuoye/rsyncrun/',
     license='MIT',
     author='David Chen',

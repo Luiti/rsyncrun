@@ -19,7 +19,7 @@ class Shell(object):
         # TODO replace with subprocess
         if wrap:
             cmd = wrap(cmd)
-        print "[command]", cmd
+        print("[command]", cmd)
         if return_output:
             return subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT)
         else:

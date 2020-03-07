@@ -18,17 +18,17 @@ class Installer(object):
         """
         `incremental_code_changelog` is lines sync filenames.
         """
-        print
-        print "[incremental_code_changelog]", incremental_code_changelog
-        print
+        print()
+        print("[incremental_code_changelog]", incremental_code_changelog)
+        print()
 
         for pkg in self.package_dir_list:
             pkg_short = pkg.split("/")[-1]  # if has dir
             need_install = pkg in incremental_code_changelog
 
             if need_install:
-                print "[install packaqe]", pkg_short, "is changed ..."
+                print("[install packaqe]", pkg_short, "is changed ...")
                 dir1 = os.path.join(self.shell.execute_dir, pkg)
                 self.shell.remote("cd %s; python setup.py install" % dir1)
             else:
-                print "[install packaqe]", pkg_short, "is not changed."
+                print("[install packaqe]", pkg_short, "is not changed.")

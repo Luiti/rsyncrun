@@ -53,7 +53,7 @@ class RsyncRun(Steps):
         if os.path.exists(self.specified_conf_file):
             self.conf_file = self.specified_conf_file  # force overwrite above
 
-        assert isinstance(self.conf_file, basestring), self.conf_file
+        assert isinstance(self.conf_file, str), self.conf_file
         Compatible.compatible_with_old_API(self)
 
     def run(self):
@@ -63,7 +63,7 @@ class RsyncRun(Steps):
             fg_lightgreen = '\033[92m'
             fg_reset = '\033[0m'
             bg_black = '\033[40m'
-            print fg_lightgreen + bg_black + string + fg_reset
+            print(fg_lightgreen + bg_black + string + fg_reset)
 
         for idx, step in enumerate(self.ordered_steps_list):
             green_line("\n[Step#%s]: %s\n" % (idx + 1, step.replace("_", " ")))
@@ -101,7 +101,7 @@ class RsyncRun(Steps):
 
     @cached_property
     def conf(self):
-        return json.loads(file(self.conf_file).read())
+        return json.loads(open(self.conf_file).read())
 
     @cached_property
     def rsync_cmd(self):

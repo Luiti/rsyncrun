@@ -24,8 +24,8 @@ class Steps(object):
 
     def setup_conf(self):
         if not os.path.exists(self.conf_file):
-            print """[warn] can't find self.conf_file = "%s" ! Please create one, e.g. %s""" % (
-                self.conf_file, JsonConfTemplate.example)
+            print("""[warn] can't find self.conf_file = "%s" ! Please create one, e.g. %s""" % (
+                self.conf_file, JsonConfTemplate.example))
             exit(1)
 
     def validate(self):
@@ -34,7 +34,7 @@ class Steps(object):
         assert "sync_projects" in self.conf, invalid_example_info
         assert "remote_server" in self.conf, invalid_example_info
         conf_file_msg = "Auto detected" if self.guess_conf_file is self.conf_file else "Specified"
-        print "** %s config file is %s" % (conf_file_msg, self.conf_file)
+        print("** %s config file is %s" % (conf_file_msg, self.conf_file))
 
     def sync_source_code(self):
         for sync_opts_type in ["local_to_remote", "remote_to_remote"]:
@@ -65,7 +65,7 @@ class Steps(object):
             self.rsync_output_file_remote,
             self.rsync_output_file,
             self.rsync_output_file_remote))
-        self.source_code_sync_result = file(self.rsync_output_file).read()
+        self.source_code_sync_result = open(self.rsync_output_file).read()
 
         self.shell.local("echo rsync_output_file; cat %s" % self.rsync_output_file)
         self.shell.local("rm -f %s" % self.rsync_output_file)

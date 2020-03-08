@@ -6,8 +6,8 @@ from setuptools import setup
 
 setup(
     name='rsyncrun',
-    version='1.1.2',
-    url='http://github.com/17zuoye/rsyncrun/',
+    version='1.2.0',
+    url='http://github.com/luiti/rsyncrun/',
     license='MIT',
     author='David Chen',
     author_email=''.join(reversed("moc.liamg@emojvm")),

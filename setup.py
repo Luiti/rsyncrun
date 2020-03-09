@@ -13,6 +13,7 @@ setup(
     author_email=''.join(reversed("moc.liamg@emojvm")),
     description='Rsync your code to server and run.',
     long_description=open("README.md").read(),
+    long_description_content_type="text/markdown",
     packages=["rsyncrun"],
     scripts=[
         'bin/rsyncrun',
@@ -28,4 +29,5 @@ setup(
         'Operating System :: OS Independent',
         'Programming Language :: Python',
     ],
+    python_requires=">=3.7.6",
 )
